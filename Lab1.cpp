@@ -139,11 +139,6 @@ Node* Del_Node(Node* root, int val)
         return NULL;
     }
     Node* del = Find_Node(root, val);
-    if (del == NULL)
-    {
-        printf("Узел со значением %d не найден в дереве\n", val);
-        return root;
-    }
     Node* parent = Find_Parent(root, del);
     if (parent != NULL)
     {
