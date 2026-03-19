@@ -35,7 +35,6 @@ Node* Add_Node(Node* root, int pval, int cval)
         printf("Ошибка дерево не существует\n");
         return NULL;
     }
-
     if (root->data == pval)
     {
         Node* new_node = Create_Node(cval);
@@ -72,16 +71,12 @@ Node* Add_Node(Node* root, int pval, int cval)
 void Print_Tree(Node* root, int tab)
 {
     if (root == NULL)
-    {
         return;
-    }
-
     for (int i = 0; i < tab; i++)
     {
         printf("    ");
     }
     printf("%d\n", root->data);
-
     Print_Tree(root->first, tab + 1);
     Print_Tree(root->other, tab);
 }
@@ -99,21 +94,17 @@ Node* Find_Parent(Node* root, Node* child)
     Node* parent = Find_Parent(root->first, child);
     if (parent != NULL)
         return parent;
-
     return Find_Parent(root->other, child);
 }
 Node* Find_Node(Node* root, int val)
 {
     if (root == NULL)
         return NULL;
-
     if (root->data == val)
         return root;
-
     Node* found = Find_Node(root->first, val);
     if (found != NULL)
         return found;
-
     return Find_Node(root->other, val);
 }
 void Free_Tree(Node* root)
@@ -122,7 +113,6 @@ void Free_Tree(Node* root)
     {
         return;
     }
-
     Free_Tree(root->first);
     Free_Tree(root->other);
     free(root);
@@ -158,7 +148,6 @@ Node* Del_Node(Node* root, int val)
         {
             prev->other = curr->other;
         }
-
         Free_Tree(curr);
     }
     return root;
