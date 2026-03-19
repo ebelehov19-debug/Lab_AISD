@@ -89,7 +89,6 @@ Node* Find_Parent(Node* root, Node* child)
 {
     if (root == NULL || child == NULL)
         return NULL;
-
     Node* temp = root->first;
     while (temp != NULL)
     {
