@@ -263,15 +263,8 @@ int main()
             int mi = 99999;
             int mi_val = 0;
             Find_Min_Deep(root, 1, &mi, &mi_val);
-            if (mi != 99999)
-            {
-                printf("Минимальная глубина листа: %d\n", mi);
-                printf("Значение на минимальной глубине: %d\n\n", mi_val);
-            }
-            else
-            {
-                printf("Листья не найдены\n\n");
-            }
+            printf("Минимальная глубина листа: %d\n", mi);
+            printf("Значение на минимальной глубине: %d\n\n", mi_val);
             break;
         }
         case 5:
