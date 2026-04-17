@@ -26,6 +26,10 @@ typedef struct Node
 Node* create_number_node(int value) 
 {
     Node* node = (Node*)malloc(sizeof(Node));
+    if(node == NULL)
+    {
+        return NULL;
+    }
     node->type = NODE_NUMBER;
     node->data.number = value;
     node->left = node->right = NULL;
@@ -34,6 +38,10 @@ Node* create_number_node(int value)
 Node* create_variable_node(char var) 
 {
     Node* node = (Node*)malloc(sizeof(Node));
+    if(node = NULL)
+    {
+        return NULL;
+    }
     node->type = NODE_VARIABLE;
     node->data.variable = var;
     node->left = node->right = NULL;
@@ -42,6 +50,10 @@ Node* create_variable_node(char var)
 Node* create_operator_node(char op, Node* left, Node* right) 
 {
     Node* node = (Node*)malloc(sizeof(Node));
+    if (node == NULL)
+    {
+        return NULL;
+    }
     node->type = NODE_OPERATOR;
     node->data.opt = op;
     node->left = left;
