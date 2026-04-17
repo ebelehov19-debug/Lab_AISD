@@ -38,7 +38,7 @@ Node* create_number_node(int value)
 Node* create_variable_node(char var) 
 {
     Node* node = (Node*)malloc(sizeof(Node));
-    if(node = NULL)
+    if(node == NULL)
     {
         return NULL;
     }
