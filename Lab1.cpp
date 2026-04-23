@@ -1,267 +1,356 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <locale.h>
-#include <windows.h>
-typedef struct Node 
-{
-    int data;
-    struct Node* first;
-    struct Node* other;
-} Node;
-Node* Create_Node(int val);
-Node* Add_Node(Node* root, int pval, int cval);
-void Print_Tree(Node* root, int tab);
-Node* Find_Parent(Node* root, Node* child);
-Node* Find_Node(Node* root, int val);
-Node* Del_Node(Node* root, int val);
-void Find_Min_Deep(Node* root, int depp, int* min_deep, int* min_val);
-void Free_Tree(Node* root);
-Node* Create_Node(int val)
-{
-    Node* new_node = (Node*)malloc(sizeof(Node));
-    if (new_node == NULL)
-    {
-        printf("ОШИБКА ВЫДЕЛЕНИЯ ПАМЯТИ\n");
-        exit(1);
-    }
-    new_node->data = val;
-    new_node->first = NULL;
-    new_node->other = NULL;
-    return new_node;
-}
-Node* Add_Node(Node* root, int pval, int cval)
-{
-    if (root == NULL) {
-        printf("Ошибка дерево не существует\n");
-        return NULL;
-    }
-    if (root->data == pval)
-    {
-        Node* new_node = Create_Node(cval);
-        if (root->first == NULL)
-        {
-            root->first = new_node;
-        }
-        else
-        {
-            Node* temp = root->first;
-            while (temp->other != NULL)
-            {
-                temp = temp->other;
-            }
-            temp->other = new_node;
-        }
-        return root;
-    }
-    Node* found = NULL;
-    if (root->first != NULL)
-    {
-        found = Add_Node(root->first, pval, cval);
-        if (found != NULL) 
-            return root;
-    }
-    if (root->other != NULL)
-    {
-        found = Add_Node(root->other, pval, cval);
-        if (found != NULL) 
-            return root;
-    }
-    return NULL;
-}
-void Print_Tree(Node* root, int tab)
-{
-    if (root == NULL)
-        return;
-    for (int i = 0; i < tab; i++)
-    {
-        printf("    ");
-    }
-    printf("%d\n", root->data);
-    Print_Tree(root->first, tab + 1);
-    Print_Tree(root->other, tab);
-}
-Node* Find_Parent(Node* root, Node* child)
-{
-    if (root == NULL || child == NULL)
-        return NULL;
-    Node* temp = root->first;
-    while (temp != NULL)
-    {
-        if (temp == child)
-            return root;
-        temp = temp->other;
-    }
-    Node* parent = Find_Parent(root->first, child);
-    if (parent != NULL)
-        return parent;
-    return Find_Parent(root->other, child);
-}
-Node* Find_Node(Node* root, int val)
-{
-    if (root == NULL)
-        return NULL;
-    if (root->data == val)
-        return root;
-    Node* found = Find_Node(root->first, val);
-    if (found != NULL)
-        return found;
-    return Find_Node(root->other, val);
-}
-void Free_Tree(Node* root)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    Free_Tree(root->first);
-    Free_Tree(root->other);
-    free(root);
-}
-Node* Del_Node(Node* root, int val)
-{
-    if (root == NULL)
-    {
-        return NULL;
-    }
-    if (root->data == val)
-    {
-        Free_Tree(root);
-        return NULL;
-    }
-    Node* del = Find_Node(root, val);
-    Node* parent = Find_Parent(root, del);
-    if (parent != NULL)
-    {
-        Node* prev = NULL;
-        Node* curr = parent->first;
 
-        while (curr != del)
+#define MAX_KEY_LEN 7
+
+typedef struct Node // структура узла 
+{
+    char key[MAX_KEY_LEN];
+    double value;
+    int height;
+    struct Node *left;
+    struct Node *right;
+} Node;
+
+int height(Node* root) // поиск высоты если нулл то 0
+{
+    return root ? root->height : 0;
+}
+
+int bfactor(Node* root) // вычисляем сбалансированость 
+{
+    return height(root->right) - height(root->left);
+}
+
+void fixheight(Node* root) // пересчет высоты 
+{
+    int hl = height(root->left);
+    int hr = height(root->right);
+    root->height = (hl > hr ? hl : hr) + 1;
+}
+
+Node* rotateright(Node* root) // правый поворот 
+{
+    Node* q = root->left;
+    root->left = q->right;
+    q->right = root;
+    fixheight(root);
+    fixheight(q);
+    return q;
+}
+
+Node* rotateleft(Node* q) // левый 
+{
+    Node* root = q->right;
+    q->right = root->left;
+    root->left = q;
+    fixheight(q);
+    fixheight(root);
+    return root;
+}
+
+Node* balance(Node* root) // балансировка 
+{
+    fixheight(root);
+    if (bfactor(root) == 2)
+    {
+        if (bfactor(root->right) < 0)// если правое выше то правый поворот 
         {
-            prev = curr;
-            curr = curr->other;
+            root->right = rotateright(root->right);
         }
-        if (prev == NULL)
+        return rotateleft(root); // левый поворот 
+    }
+    if (bfactor(root) == -2)
+    {
+        if (bfactor(root->left) > 0)// если левое выше то левый 
         {
-            parent->first = curr->other;
+            root->left = rotateleft(root->left);
         }
-        else
-        {
-            prev->other = curr->other;
-        }
-        Free_Tree(curr);
+        return rotateright(root); // правый поворот
     }
     return root;
 }
-void Find_Min_Deep(Node* root, int depp, int* min_deep, int* min_val)
+
+Node* createNode(const char* key, double value) // просто создание узла 
+{
+    Node* node = (Node*)malloc(sizeof(Node));
+    if (node == NULL)
+    {
+        return NULL;
+    }
+    strncpy(node->key, key, MAX_KEY_LEN);
+    node->key[MAX_KEY_LEN - 1] = '\0';
+    node->value = value;
+    node->height = 1;
+    node->left = NULL;
+    node->right = NULL;
+    return node;
+}
+
+Node* insert(Node* root, const char* key, double value, int* inserted)
+{
+    if (root == NULL) // если нулл то можно вставлять 
+    {
+        *inserted = 1;
+        return createNode(key, value);
+    }
+
+    int cmp = strcmp(key, root->key);// сравнение ключей 
+    if (cmp < 0) // идем влево 
+    {
+        root->left = insert(root->left, key, value, inserted);
+    }
+    else if (cmp > 0)// вправо 
+    {
+        root->right = insert(root->right, key, value, inserted);
+    }
+    else // дубликат 
+    {
+        *inserted = 0;
+        return root;
+    }
+    return balance(root);
+}
+
+Node* findmin(Node* root) // поиск с минимальным ключом 
+{
+    return root->left ? findmin(root->left) : root;
+}
+
+Node* removemin(Node* root) // удаление узла с минимальным ключом 
+{
+    if (root->left == NULL)// если нет левого потомка то минимум 
+    {
+        return root->right;
+    }
+    root->left = removemin(root->left);
+    return balance(root);
+}
+
+Node* removeKey(Node* root, const char* key, int* deleted)
+{
+    if (root == NULL)
+    {
+        *deleted = 0;
+        return NULL;
+    }
+
+    int cmp = strcmp(key, root->key);
+    if (cmp < 0)
+    {
+        root->left = removeKey(root->left, key, deleted);
+    }
+    else if (cmp > 0)
+    {
+        root->right = removeKey(root->right, key, deleted);
+    }
+    else
+    {
+        *deleted = 1;
+        Node* q = root->left;
+        Node* r = root->right;
+        free(root);
+
+        if (r == NULL)  // если нет правого поддерева то оставляем левое 
+        {
+            return q;
+        }
+
+        Node* min = findmin(r); // минимальный узел в правом поддереве
+        min->right = removemin(r);// удаляем его 
+        min->left = q; // левое min старое левое исходного 
+        return balance(min);
+    }
+    return balance(root);
+}
+
+int search(Node* root, const char* key, double* value) // поиск в дереве 
+{
+    if (root == NULL)
+    {
+        return 0;
+    }
+    int cmp = strcmp(key, root->key);
+    if (cmp == 0)
+    {
+        *value = root->value;
+        return 1;
+    }
+    else if (cmp < 0)
+    {
+        return search(root->left, key, value);
+    }
+    else
+    {
+        return search(root->right, key, value);
+    }
+}
+
+void printTreeRec(FILE* out, Node* root, int space) // вывод в дерева 
 {
     if (root == NULL)
     {
         return;
     }
-    if (root->first == NULL)
+    space += 4;
+    printTreeRec(out, root->right, space);
+    fprintf(out, "\n");
+    for (int i = 4; i < space; i++)
     {
-        if (depp < *min_deep)
-        {
-            *min_deep = depp;
-            *min_val = root->data;
-        }
+        fprintf(out, " ");
+    }
+    fprintf(out, "%s:%f (h=%d)\n", root->key, root->value, root->height);
+    printTreeRec(out, root->left, space);
+}
+
+void printTree(FILE* out, Node* root) // вывод дерева в файл
+{
+    fprintf(out, "Tree:\n");
+    if (root == NULL)
+    {
+        fprintf(out, "(empty)\n\n");
         return;
     }
-    Find_Min_Deep(root->first, depp + 1, min_deep, min_val);
-    Find_Min_Deep(root->other, depp, min_deep, min_val);
+    printTreeRec(out, root, 0);
+    fprintf(out, "\n");
+}
+void freeTree(Node* root)// удалние 
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    freeTree(root->left);
+    freeTree(root->right);
+    free(root);
 }
 int main()
 {
-    setlocale(LC_ALL, "Russian");
-    int rootVal;
-    printf("Введите значение корня: ");
-    scanf("%d", &rootVal);
-    Node* root = Create_Node(rootVal);
-    printf("Корень создан со значением %d\n\n", rootVal);
-    printf("1 - Добавить узел\n");
-    printf("2 - Удалить узел\n");
-    printf("3 - Вывести дерево\n");
-    printf("4 - Найти лист с минимальной глубиной\n");
-    printf("5 - Завершить работу\n\n");
-    while (1)
+    FILE* in = fopen("in.txt", "r");
+    if (in == NULL)
     {
-        int num;
-        printf("Выберите опцию: ");
-        scanf("%d", &num);
-        printf("\n");
-        switch (num)
+        fprintf(stderr, "No open in file\n");
+        return 1;
+    }
+    FILE* out = fopen("out.txt", "w");
+    if (out == NULL)
+    {
+        fprintf(stderr, "No open out file\n");
+        fclose(in);
+        return 1;
+    }
+    Node* root = NULL;
+    char line[256];
+    while (fgets(line, sizeof(line), in) != NULL)
+    {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strlen(line) == 0)
         {
-        case 1:
-        {
-            int pval, cval;
-            printf("Значение родителя: ");
-            scanf("%d", &pval);
-            printf("Значение потомка: ");
-            scanf("%d", &cval);
-            Node* result = Add_Node(root, pval, cval);
-            if (result != NULL)
-            {
-                printf("Добавлен узел %d как потомок узла %d\n\n", cval, pval);
-            }
-            else
-            {
-                printf("Родитель со значением %d не найден в дереве\n\n", pval);
-            }
-            break;
+            continue;
         }
-        case 2:
+        fprintf(out, "> %s\n", line);
+        int op;
+        char key[MAX_KEY_LEN] = {0};
+        double value;
+        char* token = strtok(line, " \t"); // разбиваем строку по пробелам
+        if (token == NULL)
         {
-            int val;
-            printf("Значение для удаления: ");
-            scanf("%d", &val);
-            Node* to_del = Find_Node(root, val);
-            if (to_del == NULL)
-            {
-                printf("Узел со значением %d не найден в дереве\n\n", val);
+            fprintf(out, "Error: empty command\n\n");
+            continue;
+        }
+        op = atoi(token);
+        switch (op)
+        {
+            case 1: // добавление
+                token = strtok(NULL, " \t");
+                if (token == NULL)
+                {
+                    fprintf(out, "Error: missing key\n\n");
+                    break;
+                }
+                strncpy(key, token, MAX_KEY_LEN - 1);
+                key[MAX_KEY_LEN - 1] = '\0';
+
+                token = strtok(NULL, " \t");
+                if (token == NULL)
+                {
+                    fprintf(out, "Error: missing value\n\n");
+                    break;
+                }
+                value = atof(token);
+                {
+                    int inserted = 0;
+                    root = insert(root, key, value, &inserted);
+                    if (inserted)
+                    {
+                        fprintf(out, "'%s' inserted (value=%.3f)\n\n", key, value);
+                    }
+                    else
+                    {
+                        fprintf(out, "Error: key '%s' already exists\n\n", key);
+                    }
+                }
                 break;
-            }
-            
-            Node* result = Del_Node(root, val);
-            if (result == NULL)
-            {
-                printf("Корневой узел со значением %d удален. Дерево удалено. Работа завершена\n\n", val);
-                Free_Tree(root);
-                return 0;
-            }
-            else
-            {
-                printf("Удален узел %d\n\n", val);
-            }
-            break;
-        }
-        case 3:
-        {
-            printf("Дерево:\n");
-            Print_Tree(root, 0);
-            printf("\n");
-            break;
-        }
-        case 4:
-        {
-            int mi = 99999;
-            int mi_val = 0;
-            Find_Min_Deep(root, 1, &mi, &mi_val);
-            printf("Минимальная глубина листа: %d\n", mi);
-            printf("Значение на минимальной глубине: %d\n\n", mi_val);
-            break;
-        }
-        case 5:
-        {
-            printf("Завершение работы\n");
-            Free_Tree(root);
-            return 0;
-        }
-        default:
-        {
-            printf("Опция не найдена\n\n");
-            break;
-        }
+            case 2: // удаление
+                token = strtok(NULL, " \t");
+                if (token == NULL)
+                {
+                    fprintf(out, "Error: missing key\n\n");
+                    break;
+                }
+                strncpy(key, token, MAX_KEY_LEN - 1);
+                key[MAX_KEY_LEN - 1] = '\0';
+
+                {
+                    int deleted = 0;
+                    root = removeKey(root, key, &deleted);
+                    if (deleted)
+                    {
+                        fprintf(out, "Node '%s' deleted\n\n", key);
+                    }
+                    else
+                    {
+                        fprintf(out, "Error: key '%s' not found\n\n", key);
+                    }
+                }
+                break;
+
+            case 3:
+                printTree(out, root);
+                break;
+
+            case 4:// поиск 
+                token = strtok(NULL, " \t");
+                if (token == NULL)
+                {
+                    fprintf(out, "Error: missing key\n\n");
+                    break;
+                }
+                strncpy(key, token, MAX_KEY_LEN - 1);
+                key[MAX_KEY_LEN - 1] = '\0';
+                {
+                    double foundValue;
+                    if (search(root, key, &foundValue))
+                    {
+                        fprintf(out, "Found: key='%s', value=%.3f\n\n", key, foundValue);
+                    }
+                    else
+                    {
+                        fprintf(out, "Key '%s' not found\n\n", key);
+                    }
+                }
+                break;
+
+            default:
+                fprintf(out, "Error: unknown operation %d\n\n", op);
         }
     }
+    freeTree(root);
+    fclose(in);
+    fclose(out);
+    printf("Res save out.txt\n");
     return 0;
 }
